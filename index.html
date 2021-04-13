@@ -15,12 +15,22 @@
 
 <body>
     <div id="app">
-        <h3 class="container">Primeira Tela faturamento</h3>
-        <div class="container" style="width: 100%;">
+        <nav class="nav1">
+            <ul>
+                <li @click="alternar" class="container">
+                    {{nome}} Tela Faturamento
+                </li>
+            </ul>
+        </nav>
+        <div v-if="tela" class="container" style="width: 100%;">
+            <input v-model="filtro" type="number" placeholder="filtro" class="form-control">
             <button @click="addmais" class="btn btn-outline-primary">+</button>
             <button @click="addmenos" class="btn btn-outline-danger">-</button>
-            <button @click="calcular" class="btn btn-outline-secondary">Calcular</button>
+            <button @click="calcular" class="btn btn-outline-success">Calcular</button>
             <button @click="clear" class="btn btn-outline-secondary">limpar</button>
+        </div>
+        <div v-if="!tela" class="container" style="width: 100%;">
+            <button @click="calculartela2" class="btn btn-outline-success">Calcular</button>
         </div>
         <div class="container">
             <table class="table table-sm">
@@ -29,11 +39,21 @@
                     <th>Lista 2</th>
                     <th>Resultado</th>
                 </tr>
-                <tbody>
+                <tbody v-if="tela">
                     <tr v-for="(entradas, i) in entrada" :key="i">
-                        <td><input class="form-control" type="number" data-js="input1"></td>
-                        <td><input class="form-control" type="number" data-js="input2"></td>
+                        <td><input v-model="lista1[i]" class="form-control" type="number"></td>
+                        <td><input v-model="lista2[i]" class="form-control" type="number"></td>
                         <td>{{resultado[i]}}</td>
+                    </tr>
+                    <tr>
+
+                    </tr>
+                </tbody>
+                <tbody v-else>
+                    <tr v-for="(entradas, index) in resultado" :key="index">
+                        <td>{{entradas}}</td>
+                        <td><input v-model="lista3[index]" class="form-control" type="number"></td>
+                        <td>{{resultado2[index]}}</td>
                     </tr>
                     <tr>
 
@@ -52,34 +72,50 @@
         data: {
             lista1: [],
             lista2: [],
+            lista3: [],
+            resultado2: [],
             resultado: [],
-            entrada: 1
+            entrada: 1,
+            tela: true,
+            nome: 'Primeira',
+            filtro: ''
+        },
+        watch: {
+            filtro() {
+                console.log('po')
+                for(let i=0; i<this.entrada; i++){
+                    this.lista2[i]=this.filtro
+
+                }
+
+            },
         },
         methods: {
+
             addmais() {
                 this.entrada++
             },
             addmenos() {
-                if (this.entrada > 1) {
+                if (this.entrada > 0) {
                     this.entrada--
+                    this.lista1.splice(this.entrada, 1)
+                    this.lista2.splice(this.entrada, 1)
+                    this.lista3.splice(this.entrada, 1)
+                    this.resultado.splice(this.entrada, 1)
+                    this.resultado2.splice(this.entrada, 1)
                 }
             },
             calcular() {
-                this.resultado = []
-                const input1 = document.querySelectorAll("[data-js='input1']")
-                const input2 = document.querySelectorAll("[data-js='input2']")
-                Array.prototype.forEach.call(input1, (element, index) => {
-                    if (element.value && input2[index].value) {
-                        this.resultado.push(
-                            parseFloat(element.value) + parseFloat(input2[index].value)*2
-                        )
-                        element.style.borderColor = 'blue'
-                        input2[index].style.borderColor = 'blue'
-
+                this.resultado = this.lista1.map((element, index) => {
+                    return parseFloat(element) * parseFloat(this.lista2[index])
+                })
+            },
+            calculartela2() {
+                this.resultado2 = this.lista3.map((element, index) => {
+                    if ((element && this.resultado[index]) && this.resultado[index] != 'invalido') {
+                        return parseFloat(element) * parseFloat(this.resultado[index])
                     } else {
-                        this.resultado.push('invalido')
-                        element.style.borderColor = 'red'
-                        input2[index].style.borderColor = 'red'
+                        return 'invalido'
                     }
                 })
             },
@@ -88,7 +124,23 @@
                 this.lista1 = []
                 this.lista2 = []
                 this.resultado = []
-            }
+                this.lista3 = []
+                this.resultado2 = []
+            },
+            alternar(element) {
+
+                this.tela = !this.tela
+
+                if (this.tela) {
+                    element.target.style.backgroundColor = "teal"
+                    element.target.style.borderRadius = "10px"
+                    this.nome = 'Primeira'
+                } else {
+                    element.target.style.backgroundColor = "orange"
+                    element.target.style.borderRadius = "10px"
+                    this.nome = 'Segunda'
+                }
+            },
         }
 
     })
@@ -97,7 +149,8 @@
 <style>
     * {
         font-family: 'Nunito', sans-serif;
-        font-weight: 600;
+        font-weight: 300;
+        font-size: 20px;
     }
 
     .container {
@@ -111,14 +164,35 @@
 
     tr {
         text-align: center;
-
     }
 
     td {
-        text-align: justify;
+        text-align: center;
     }
-    button{
+
+    th {
+        min-width: 80px;
+    }
+
+    button {
         margin: 5px;
+    }
+
+    .nav1 {
+        width: 300px;
+        margin: 0 auto;
+    }
+
+    .nav1 li {
+        border-radius: 10px;
+        list-style: none;
+        background-color: teal;
+        padding: 2px;
+        margin-top: 10px;
+    }
+
+    .nav1 li:hover {
+        background-color: rgb(216, 142, 4);
     }
 </style>
 
