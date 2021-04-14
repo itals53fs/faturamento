@@ -17,48 +17,60 @@
     <div id="app">
         <nav class="nav1">
             <ul>
-                <li @click="alternar" class="container">
+                <li @click="visualizar" class="container">
                     {{nome}} Tela Faturamento
                 </li>
             </ul>
         </nav>
         <div v-if="tela" class="container" style="width: 100%;">
-            <input v-model="filtro" type="number" placeholder="filtro" class="form-control">
             <button @click="addmais" class="btn btn-outline-primary">+</button>
             <button @click="addmenos" class="btn btn-outline-danger">-</button>
-            <button @click="calcular" class="btn btn-outline-success">Calcular</button>
+            <button @click="calcular" class="btn btn-outline-success"
+                >Calcular</button>
             <button @click="clear" class="btn btn-outline-secondary">limpar</button>
         </div>
-        <div v-if="!tela" class="container" style="width: 100%;">
+        <div v-else class="container" style="width: 100%;">
+            <input v-model="filtro" type="number" placeholder="filtro" class="form-control">
             <button @click="calculartela2" class="btn btn-outline-success">Calcular</button>
         </div>
         <div class="container">
             <table class="table table-sm">
-                <tr>
-                    <th>Lista 1</th>
-                    <th>Lista 2</th>
-                    <th>Resultado</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Quantidade</th>
+                        <th v-if="tela">Valor Unitário</th>
+                        <th v-else>Peso</th>
+                        <th>Resultado</th>
+                    </tr>
+                </thead>
                 <tbody v-if="tela">
                     <tr v-for="(entradas, i) in entrada" :key="i">
                         <td><input v-model="lista1[i]" class="form-control" type="number"></td>
                         <td><input v-model="lista2[i]" class="form-control" type="number"></td>
-                        <td>{{resultado[i]}}</td>
-                    </tr>
-                    <tr>
-
+                        <td>{{resultado[i] | dinheiro}}</td>
                     </tr>
                 </tbody>
+
                 <tbody v-else>
-                    <tr v-for="(entradas, index) in resultado" :key="index">
+                    <tr v-for="(entradas, index) in lista1" :key="index">
                         <td>{{entradas}}</td>
                         <td><input v-model="lista3[index]" class="form-control" type="number"></td>
-                        <td>{{resultado2[index]}}</td>
-                    </tr>
-                    <tr>
-
+                        <td>{{resultado2[index] | dinheiro}}</td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td></td>
+                        <td v-if="tela" class="total">
+                            {{totalTela1 | dinheiro}}
+                        </td>
+                        <td v-else class="total">
+                            {{totalTela2 | dinheiro}}
+                        </td>
+                    </tr>
+
+                </tfoot>
             </table>
         </div>
     </div>
@@ -78,16 +90,24 @@
             entrada: 1,
             tela: true,
             nome: 'Primeira',
-            filtro: ''
+            filtro: '',
+            totalTela1: '',
+            totalTela2: '',
+            disabled: false
+        },
+        filters: {
+            dinheiro(value) {
+                if (!value) return '';
+                return value.toString().replace(/\./, ',')
+
+            }
         },
         watch: {
             filtro() {
-                console.log('po')
-                for(let i=0; i<this.entrada; i++){
-                    this.lista2[i]=this.filtro
+                for (let i = 0; i < this.entrada; i++) {
+                    this.lista3[i] = this.filtro
 
                 }
-
             },
         },
         methods: {
@@ -106,45 +126,50 @@
                 }
             },
             calcular() {
+                if(this.lista2.length == 0 || this.lista1.length == 0){
+                    return alert("sem valor")
+                }
                 this.resultado = this.lista1.map((element, index) => {
-                    return parseFloat(element) * parseFloat(this.lista2[index])
+                    return (parseFloat(element) * parseFloat(this.lista2[index])).toFixed(2)
                 })
+                this.totalTela1 = this.resultado.reduce(function (acun, atual) {
+                    return parseFloat(acun) + parseFloat(atual)
+                })
+                //this.totalTela1 = this.totalTela1.toFixed(2)
+
             },
             calculartela2() {
                 this.resultado2 = this.lista3.map((element, index) => {
-                    if ((element && this.resultado[index]) && this.resultado[index] != 'invalido') {
-                        return parseFloat(element) * parseFloat(this.resultado[index])
+                    if ((element && this.lista1[index]) && this.lista1[index] != 'invalido') {
+                        return (parseFloat(element) * parseFloat(this.lista1[index])).toFixed(2)
                     } else {
                         return 'invalido'
                     }
                 })
+                this.totalTela2 = this.resultado2.reduce(function (acun, atual) {
+                    return parseFloat(acun) + parseFloat(atual)
+                })
+                //this.totalTela2 = this.totalTela2.toFixed(2)
             },
             clear() {
                 this.entrada = 0
+                this.totalTela1 = 0
+                this.totalTela2 = 0
                 this.lista1 = []
                 this.lista2 = []
                 this.resultado = []
                 this.lista3 = []
                 this.resultado2 = []
-            },
-            alternar(element) {
 
-                this.tela = !this.tela
-
-                if (this.tela) {
-                    element.target.style.backgroundColor = "teal"
-                    element.target.style.borderRadius = "10px"
-                    this.nome = 'Primeira'
-                } else {
-                    element.target.style.backgroundColor = "orange"
-                    element.target.style.borderRadius = "10px"
-                    this.nome = 'Segunda'
-                }
             },
+            visualizar(){
+                this.tela=!this.tela
+                this.nome=this.nome=='Segunda'? 'Primeira': 'Segunda'
+            }
         }
-
+        
     })
-
+    
 </script>
 <style>
     * {
@@ -193,6 +218,15 @@
 
     .nav1 li:hover {
         background-color: rgb(216, 142, 4);
+    }
+
+    .total {
+        font-size: 24px;
+        font-weight: 600;
+    }
+
+    input {
+        border-color: blue !important;
     }
 </style>
 
